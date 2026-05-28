@@ -1287,6 +1287,17 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                 byte[] data = MavlinkUtil.StructureToByteArray(indata);
                 
                 int i = 0;
+                bool encryptionEnabled = MAVLink.MavlinkChaCha20.EncryptionEnabled;
+                bool signing = MAVlist[sysid, compid].signing || forcesigning;
+                ulong signatureTimestamp = 0;
+
+                if (signing)
+                {
+                    signatureTimestamp = (UInt64)((DateTime.UtcNow - new DateTime(2015, 1, 1)).TotalMilliseconds * 100);
+                    if (signatureTimestamp == MAVlist[sysid, compid].timestamp)
+                        signatureTimestamp++;
+                    MAVlist[sysid, compid].timestamp = signatureTimestamp;
+                }
 
                 // are we mavlink2 enabled for this sysid/compid
                 if (!MAVlist[sysid, compid].mavlinkv2 && messageType < 256 && !forcemavlink2)
@@ -1315,6 +1326,11 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                     {
                         packet[i] = b;
                         i++;
+                    }
+
+                    if (encryptionEnabled && data.Length > 0)
+                    {
+                        MAVLink.MavlinkChaCha20.XorMessage(packet, false, 0);
                     }
 
                     ushort checksum = MavlinkCRC.crc_calculate(packet, packet[1] + 6);
@@ -1363,6 +1379,11 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                     {
                         packet[i] = b;
                         i++;
+                    }
+
+                    if (encryptionEnabled && data.Length > 0)
+                    {
+                        MAVLink.MavlinkChaCha20.XorMessage(packet, signing, signatureTimestamp);
                     }
 
                     ushort checksum = MavlinkCRC.crc_calculate(packet, packet[1] + MAVLINK_NUM_HEADER_BYTES);
@@ -5083,6 +5104,13 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
                     var timestamp = new DateTime(2015, 1, 1).AddMilliseconds(message.sigTimestamp / 100.0);
                     var delta = DateTime.UtcNow - timestamp;
+                }
+
+                if (MAVLink.MavlinkChaCha20.EncryptionEnabled)
+                {
+                    bool hasSignature = message.sig != null;
+                    ulong signatureTimestamp = hasSignature ? message.sigTimestamp : 0;
+                    MAVLink.MavlinkChaCha20.XorMessage(message, hasSignature, signatureTimestamp);
                 }
 
                 // packet is now verified
