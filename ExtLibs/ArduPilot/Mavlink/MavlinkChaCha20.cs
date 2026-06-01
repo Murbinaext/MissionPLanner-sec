@@ -1,6 +1,7 @@
 using System;
 
-public partial class MAVLink
+
+namespace MissionPlanner.ArduPilot.Mavlink 
 {
     public static class MavlinkChaCha20
     {
@@ -21,7 +22,7 @@ public partial class MAVLink
             Key = (byte[])key.Clone();
         }
 
-        public static void GenerateNonce(byte[] nonce, MAVLinkMessage message, bool hasSignature, ulong signatureTimestamp = 0)
+        public static void GenerateNonce(byte[] nonce, MAVLink.MAVLinkMessage message, bool hasSignature, ulong signatureTimestamp = 0)
         {
             if (nonce == null) throw new ArgumentNullException(nameof(nonce));
             if (nonce.Length != 12) throw new ArgumentException("Nonce must be 12 bytes.", nameof(nonce));
@@ -61,12 +62,12 @@ public partial class MAVLink
             ChaCha20XOR(Key, 1, nonce, input, output, input.Length);
         }
 
-        public static void XorMessage(MAVLinkMessage message, bool hasSignature = false, ulong signatureTimestamp = 0)
+        public static void XorMessage(MAVLink.MAVLinkMessage message, bool hasSignature = false, ulong signatureTimestamp = 0)
         {
             if (message == null) throw new ArgumentNullException(nameof(message));
             if (message.buffer == null) throw new ArgumentNullException("message.buffer");
 
-            int payloadOffset = message.ismavlink2 ? MAVLINK_NUM_HEADER_BYTES : 6;
+            int payloadOffset = message.ismavlink2 ? MAVLink.MAVLINK_NUM_HEADER_BYTES : 6;
             int length = message.payloadlength;
 
             if (length == 0)
@@ -88,7 +89,7 @@ public partial class MAVLink
             if (packet == null) throw new ArgumentNullException(nameof(packet));
             if (packet.Length == 0) throw new ArgumentException("Packet cannot be empty.", nameof(packet));
 
-            var message = new MAVLinkMessage(packet, DateTime.UtcNow);
+            var message = new MAVLink.MAVLinkMessage(packet, DateTime.UtcNow);
             XorMessage(message, hasSignature, signatureTimestamp);
         }
 
