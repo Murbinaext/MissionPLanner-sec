@@ -1328,11 +1328,6 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                         i++;
                     }
 
-                    if (encryptionEnabled && data.Length > 0)
-                    {
-                        MavlinkChaCha20.XorMessage(packet, false, 0);
-                    }
-
                     ushort checksum = MavlinkCRC.crc_calculate(packet, packet[1] + 6);
 
                     checksum = MavlinkCRC.crc_accumulate(MAVLINK_MESSAGE_INFOS.GetMessageInfo((uint) messageType).crc,
@@ -5106,7 +5101,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                     var delta = DateTime.UtcNow - timestamp;
                 }
 
-                if (MavlinkChaCha20.EncryptionEnabled)
+                if (message.ismavlink2 && MavlinkChaCha20.EncryptionEnabled)
                 {
                     bool hasSignature = message.sig != null;
                     ulong signatureTimestamp = hasSignature ? message.sigTimestamp : 0;
