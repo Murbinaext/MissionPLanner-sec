@@ -1406,13 +1406,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
 
                         // signature = sha256_48(secret_key + header + payload + CRC + link-ID + timestamp)
 
-                        var timestamp = (UInt64) ((DateTime.UtcNow - new DateTime(2015, 1, 1)).TotalMilliseconds * 100);
-
-                        if (timestamp == MAVlist[sysid, compid].timestamp)
-                            timestamp++;
-
-                        MAVlist[sysid, compid].timestamp = timestamp;
-
+                        var timestamp = signatureTimestamp;
                         var timebytes = BitConverter.GetBytes(timestamp);
 
                         var sig = new byte[7]; // 13 includes the outgoing hash
