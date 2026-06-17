@@ -91,7 +91,7 @@ subscriptions = [
 ]
 
 with open(csv_path, "w") as f:
-    f.write("Timestamp,BytesRx,BytesTx,PacketsRx,PacketsLost,PacketsPerSecond,LinkQualityPercent,MaxPacketIntervalMs\n")
+    f.write("Timestamp,BytesRx,BytesTx,PacketsRx,PacketsLost,PacketsPerSecond,LinkQualityPercent,MaxPacketIntervalMs,CpuLoad(%),FreeMem(B),BatteryVoltage(V)\n")
 
 print("Recording metrics. To stop, abort the script in Mission Planner.")
 
@@ -115,9 +115,20 @@ try:
             if received_last_3s + lost_last_3s > 0:
                 quality = int(round(received_last_3s / float(received_last_3s + lost_last_3s) * 100.0))
 
+            # Extract internal drone metrics (SYS_STATUS)
+            cpu_load = 0.0
+            free_mem = 0
+            battery_voltage = 0.0
+            
+            if hasattr(port.MAV, 'cs'):
+                cpu_load = float(getattr(port.MAV.cs, 'load', 0.0))
+                free_mem = int(getattr(port.MAV.cs, 'freemem', 0))
+                battery_voltage = float(getattr(port.MAV.cs, 'battery_voltage', 0.0))
+
             timestamp = DateTime.Now.ToString("HH:mm:ss.fff")
 
-            line = "{},{},{},{},{},{:.2f},{},{}\n".format(
+            # Append the new variables to the CSV line format
+            line = "{},{},{},{},{},{:.2f},{},{},{:.1f},{},{:.2f}\n".format(
                 timestamp,
                 total_bytes_rx,
                 total_bytes_tx,
@@ -125,7 +136,10 @@ try:
                 total_packets_lost,
                 packets_per_second,
                 quality,
-                max_packet_interval_ms
+                max_packet_interval_ms,
+                cpu_load,
+                free_mem,
+                battery_voltage
             )
 
             with open(csv_path, "a") as f:
@@ -151,7 +165,7 @@ except SystemError:
         pass
 
 finally:
-    # 3. Safely clean up memory and dispose subscriptions
+    # Safely clean up memory and dispose subscriptions
     for sub in subscriptions:
         try:
             sub.Dispose()
