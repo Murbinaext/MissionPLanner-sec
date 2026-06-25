@@ -1328,6 +1328,12 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                         i++;
                     }
 
+                    // encrypt payload for MAVLink v1 if enabled
+                    if (encryptionEnabled && data.Length > 0)
+                    {
+                        MavlinkChaCha20.XorMessage(packet, signing, signatureTimestamp);
+                    }
+
                     ushort checksum = MavlinkCRC.crc_calculate(packet, packet[1] + 6);
 
                     checksum = MavlinkCRC.crc_accumulate(MAVLINK_MESSAGE_INFOS.GetMessageInfo((uint) messageType).crc,
