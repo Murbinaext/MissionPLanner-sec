@@ -5095,7 +5095,7 @@ Mission Planner waits for 2 valid heartbeat packets before connecting
                     var delta = DateTime.UtcNow - timestamp;
                 }
 
-                if (message.ismavlink2 && MavlinkChaCha20.EncryptionEnabled)
+                if (MavlinkChaCha20.EncryptionEnabled)
                 {
                     bool hasSignature = message.sig != null;
                     ulong signatureTimestamp = hasSignature ? message.sigTimestamp : 0;
